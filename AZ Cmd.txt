@@ -1,0 +1,20 @@
+RG="AZCLI"
+
+az group create --location eastus -n ${RG}
+
+az network vnet create -g ${RG} -n ${RG}-vNET1 --address-prefix 10.36.0.0/16 \
+--subnet-name ${RG}-Subnet-1 --subnet-prefix 10.36.1.0/24 -l eastus
+
+az network vnet create -g ${RG} -n ${RG}-vNET2 --address-prefix 172.16.0.0/16 \
+--subnet-name ${RG}-Subnet-1 --subnet-prefix 172.16.1.0/24 -l westus
+az network nsg create -g ${RG} -n ${RG}_NSG1 -l eastus
+
+az network nsg rule create -g ${RG} --nsg-name ${RG}_NSG1 -n ${RG}_NSG1_RULE1 --priority 100 \
+--source-address-prefixes '*' --source-port-ranges '*'     --destination-address-prefixes '*' \
+--destination-port-ranges '*' --access Allow     --protocol Tcp --description "Allowing All Traffic For Now"
+
+
+IMAGE='Canonical:0001-com-ubuntu-server-focal-daily:20_04-daily-lts-gen2:latest'
+
+az vm create --resource-group ${RG} --name LIXVM1 --image $IMAGE --vnet-name ${RG}-vNET1 \
+--subnet ${RG}-Subnet-1 --admin-username srinivasadmin --admin-password "Admin@123456" --size Standard_B2s --storage-sku StandardSSD_LRS --nsg ${RG}_NSG1
